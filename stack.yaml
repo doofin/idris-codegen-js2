@@ -1,0 +1,6 @@
+resolver: lts-11.3
+
+packages:
+  - location: .
+
+extra-deps: [idris-1.3.0]

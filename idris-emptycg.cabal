@@ -6,8 +6,6 @@ Author:         Edwin Brady
 Maintainer:	Edwin Brady <ecb10@st-andrews.ac.uk>
 Build-Type:	Simple
 Cabal-Version:  >= 1.8
-Extra-source-files:
-		rts/*
 
 Executable idris-emptycg
   Main-is:        Main.hs
