@@ -20,7 +20,7 @@ Executable idris-emptycg
                 , mtl
                 , transformers
 
-  other-modules: IRTS.CodegenEmpty
+--  other-modules: IRTS.CodegenEmpty
 
   if os(linux)
      cpp-options:   -DLINUX
