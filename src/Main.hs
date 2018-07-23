@@ -12,7 +12,7 @@ import System.Exit
 import IRTS.Simplified
 import Idris.Core.TT
 
--- generated bin :  .stack-work/dist/x86_64-linux-tinfo6/Cabal-2.0.1.0/build/idris-emptycg/idris-emptycg 
+
 data Opts = Opts {inputs :: [FilePath],
                   output :: FilePath }
 
@@ -30,11 +30,13 @@ getOpts = do xs <- getArgs
 
 codeGenSdecls :: CodeGenerator
 codeGenSdecls ci = do
-  putStrLn "codegen template sdecls"
+  putStrLn "codegen sdecls"
   let res = foldl1 (\x y->x++"\n"++y) $ fmap (\(a,b)->sdecls2str a b) $ simpleDecls ci
   putStrLn res
-  writeFile (outputFile ci) res
-    
+  let ofn = outputFile ci
+  putStrLn $ "outputFile : " ++ ofn
+  writeFile ofn res
+
 
 --use IRTS.Simplified decl
 -- data SDecl = SFun Name [Name] Int SExp
@@ -45,18 +47,18 @@ sexp2str :: SExp -> String
 sexp2str x = ""
 
 
-jsMain :: Opts -> Idris ()
-jsMain opts = do elabPrims
-                 loadInputs (inputs opts) Nothing
-                 mainProg <- elabMain
-                 ir <- compile (Via IBCFormat "sdecl") (output opts) (Just mainProg)
-                 runIO $ codeGenSdecls ir
+sdeclMain :: Opts -> Idris ()
+sdeclMain opts = do elabPrims
+                    loadInputs (inputs opts) Nothing
+                    mainProg <- elabMain
+                    ir <- compile (Via IBCFormat "sdecl") (output opts) (Just mainProg)
+                    runIO $ codeGenSdecls ir
 
 main :: IO ()
 main = do opts <- getOpts
           if (null (inputs opts))
              then showUsage
-             else runMain (jsMain opts)
+             else runMain (sdeclMain opts)
 
 {-
 module IRTS.CodegenCommon where
@@ -72,7 +74,7 @@ data CodegenInfo = CodegenInfo {
   , compileLibs   :: [String]
   , compilerFlags :: [String]
   , debugLevel    :: DbgLevel
-  , simpleDecls   :: [(Name, SDecl)]
+  , simpleDecls   :: [(Name, SDecl)] -- most low level
   , defunDecls    :: [(Name, DDecl)]
   , liftDecls     :: [(Name, LDecl)]
   , interfaces    :: Bool
