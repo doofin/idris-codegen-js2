@@ -7,7 +7,7 @@ Maintainer:	Edwin Brady <ecb10@st-andrews.ac.uk>
 Build-Type:	Simple
 Cabal-Version:  >= 1.8
 
-Executable idris-emptycg
+Executable idris-sdecl
   Main-is:        Main.hs
   hs-source-dirs: src
 
