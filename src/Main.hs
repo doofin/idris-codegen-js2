@@ -11,6 +11,7 @@ import System.Environment
 import System.Exit
 import IRTS.Simplified
 import Idris.Core.TT
+
 -- generated bin :  .stack-work/dist/x86_64-linux-tinfo6/Cabal-2.0.1.0/build/idris-emptycg/idris-emptycg 
 data Opts = Opts {inputs :: [FilePath],
                   output :: FilePath }
@@ -26,17 +27,23 @@ getOpts = do xs <- getArgs
     process opts ("-o":o:xs) = process (opts { output = o }) xs
     process opts (x:xs) = process (opts { inputs = x:inputs opts }) xs
     process opts [] = opts
-    
+
 codeGenSdecls :: CodeGenerator
 codeGenSdecls ci = do
   putStrLn "codegen template sdecls"
-  writeFile (outputFile ci) $
-    foldl1 (++) $ fmap (\(a,b)->sdecls2str a b) $ simpleDecls ci
+  let res = foldl1 (\x y->x++"\n"++y) $ fmap (\(a,b)->sdecls2str a b) $ simpleDecls ci
+  putStrLn res
+  writeFile (outputFile ci) res
+    
 
 --use IRTS.Simplified decl
 -- data SDecl = SFun Name [Name] Int SExp
 sdecls2str :: Name -> SDecl -> String
 sdecls2str fname aaa@(SFun _ fArgs i fBody) = (show fname) ++ "--->"++ (show aaa)
+
+sexp2str :: SExp -> String
+sexp2str x = ""
+
 
 jsMain :: Opts -> Idris ()
 jsMain opts = do elabPrims

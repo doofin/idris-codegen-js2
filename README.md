@@ -7,6 +7,11 @@ build:
 
 ```bash
 stack build
+
+stack install (which should put idris-codegen-sdecl in path)
+
+idris  --codegen sdecl  , you should see output simplified decls
+
 ```
 
 This is an code non-generator for Idris. That is, it's a project which builds
