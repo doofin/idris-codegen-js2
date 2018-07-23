@@ -9,13 +9,14 @@ import IRTS.Compiler
 import IRTS.CodegenCommon
 import System.Environment
 import System.Exit
-
+import IRTS.Simplified
+import Idris.Core.TT
 -- generated bin :  .stack-work/dist/x86_64-linux-tinfo6/Cabal-2.0.1.0/build/idris-emptycg/idris-emptycg 
 data Opts = Opts {inputs :: [FilePath],
                   output :: FilePath }
 
 showUsage = do putStrLn "A code generator which is intended to be called by the compiler, not by a user."
-               putStrLn "Usage: idris-codegen-javascript <ibc-files> [-o <output-file>]"
+               putStrLn "Usage: idris-codegen-sdecl <ibc-files> [-o <output-file>]"
                exitWith ExitSuccess
 
 getOpts :: IO Opts
@@ -26,15 +27,23 @@ getOpts = do xs <- getArgs
     process opts (x:xs) = process (opts { inputs = x:inputs opts }) xs
     process opts [] = opts
     
-codegenJavaScript :: CodeGenerator
-codegenJavaScript x = putStrLn "codegenJavaScript"
+codeGenSdecls :: CodeGenerator
+codeGenSdecls ci = do
+  putStrLn "codegen template sdecls"
+  writeFile (outputFile ci) $
+    foldl1 (++) $ fmap (\(a,b)->sdecls2str a b) $ simpleDecls ci
+
+--use IRTS.Simplified decl
+-- data SDecl = SFun Name [Name] Int SExp
+sdecls2str :: Name -> SDecl -> String
+sdecls2str fname aaa@(SFun _ fArgs i fBody) = (show fname) ++ "--->"++ (show aaa)
 
 jsMain :: Opts -> Idris ()
 jsMain opts = do elabPrims
                  loadInputs (inputs opts) Nothing
                  mainProg <- elabMain
-                 ir <- compile (Via IBCFormat "javascript") (output opts) (Just mainProg)
-                 runIO $ codegenJavaScript ir
+                 ir <- compile (Via IBCFormat "sdecl") (output opts) (Just mainProg)
+                 runIO $ codeGenSdecls ir
 
 main :: IO ()
 main = do opts <- getOpts
