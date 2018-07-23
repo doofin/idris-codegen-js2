@@ -1,6 +1,8 @@
 Idris Empty Code Generator
 --------------------------
 
+https://eb.host.cs.st-andrews.ac.uk/drafts/compile-idris.pdf
+
 build:
 
 ```bash
