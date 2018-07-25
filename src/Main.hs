@@ -58,61 +58,65 @@ sdeclMain opts = do
 codeGenSdecls :: CodeGenerator
 codeGenSdecls ci = do
   putStrLn "codegen sdecls"
-  let res =
+  let genDecls =
         foldl1 (\x y -> x ++ "\n" ++ y) $
         fmap (\(a, b) -> sdecls2str a b) $ simpleDecls ci
-  let resWithMain = res ++ mainEntry
-  putStrLn resWithMain
+  let declsWithMain = genDecls ++ mainEntry
+  putStrLn declsWithMain
   let ofn = outputFile ci
   putStrLn $ "outputFile : " ++ ofn
-  writeFile ofn resWithMain
+  writeFile ofn declsWithMain
 
 mainEntry = jsnm (sMN 0 "runMain") ++ "();" -- main entry!
 --use IRTS.Simplified decl
 -- data SDecl = SFun Name [Name] Int SExp
 sdecls2str :: Name -> SDecl -> String
-sdecls2str fname aaa@(SFun _ fArgs i fBody) = cgFun fname fArgs fBody
--- sdecls2str fname decls | show fname =="Main.main" = ""
+sdecls2str fname aaa@(SFun _ fArgs i fBody) = cgDecls fname fArgs fBody
 
-jsnm s = "idrisGen_" ++
+
+jsnm s = "idr_" ++
   let nm = (showCG s)
       nameok c = or [isLetter c,isDigit c]
   in fmap (\x->if nameok x then x else '_') nm
 
-cgFun :: Name -> [Name] -> SExp -> String
-cgFun fname args fbody =
+cgDecls :: Name -> [Name] -> SExp -> String
+cgDecls fname args fbody =
   "function " ++
   jsnm fname ++
   "(" ++
   (mconcat $ intersperse "," $ fmap jsnm args) ++
-  ") " ++ "{\n" ++ sexp2str fbody ++ "\n}\n\n"
+  ") " ++ "{\n" ++ sexpRec (("  "++).jsret) fbody ++ "\n}\n\n"
 
-sexp2str :: SExp -> String
-sexp2str (SV (Glob n)) = jsret $ jsnm n ++ "()"
-sexp2str (SV (Loc i)) = jsret $ loc i 
-sexp2str (SApp _ fname args) = -- function application
+sexpRec :: (String->String)->SExp -> String
+sexpRec f (SV (Glob n)) = f $ jsnm n ++ "()"
+sexpRec f (SV (Loc i)) = f $ loc i
+--sexpRec f (SApp True fname args) = ""-- function application,gen garbish
+sexpRec f (SApp _ fname args) = -- function application
   (jsnm fname) ++ "("++
-  (mconcat $
+  (mconcat $ intersperse "," $
    fmap
      cgVar
-     args)++")"
-sexp2str x@(SLet (Loc i) x2 x3) = show x
-sexp2str (SUpdate x1 x2) = "SUpdate"
-sexp2str (SCon x1 x2 x3 x4) = "SCon"
-sexp2str (SCase x1 x2 x3) = ""
-sexp2str (SChkCase x1 x2) = ""
-sexp2str (SProj x1 x2) = ""
-sexp2str (SConst x) = jsret $ cgConst x
-sexp2str (SForeign x1 x2 x3) = ""
-sexp2str (SOp primfn lvars) = cgOp primfn $ fmap cgVar lvars
-sexp2str SNothing = jsret "null"
-sexp2str (SError x) = ""
+     args)++");\n"
+sexpRec f aa@(SLet (Loc i) v sc) =
+  sexpRec (\x -> "var "++ loc i ++ " = " ++ x ++ ";\n") v ++
+  sexpRec f sc
+sexpRec f (SUpdate x1 x2) = ""
+sexpRec f (SCon x1 x2 x3 x4) = ""
+sexpRec f (SCase x1 x2 x3) = ""
+sexpRec f (SChkCase x1 x2) = ""
+sexpRec f (SProj x1 x2) = ""
+sexpRec f (SConst x) = f $ cgConst x
+sexpRec f (SForeign x1 x2 x3) = ""
+sexpRec f (SOp primfn lvars) = cgOp primfn $ fmap cgVar lvars
+sexpRec f SNothing = ""
+sexpRec f (SError x) = ""
+
 
 var :: Name -> String
-var n = "$" ++ jsnm n
+var n = "$varglob" ++ jsnm n
 
 loc :: Int -> String
-loc i = "$loc" ++ show i
+loc i = "$local" ++ show i
 
 cgVar :: LVar -> String
 cgVar (Loc i) = loc i
